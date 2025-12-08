@@ -1,58 +1,20 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { GPSPosition, Device, Geofence, Alert, TrackingState } from '@/types/tracking';
 
-// Generate realistic mock GPS data for a moving vehicle
-const generateMockTrack = (): GPSPosition[] => {
-  const baseTime = new Date();
-  const positions: GPSPosition[] = [];
-  
-  // Starting point (simulating a work site area)
-  let lat = 40.7128;
-  let lng = -74.006;
-  let heading = 45;
-  
-  for (let i = 60; i >= 0; i--) {
-    // Simulate realistic movement with some variation
-    const speedVariation = Math.random() * 10 - 5;
-    const speed = Math.max(5, 25 + speedVariation);
-    const headingChange = (Math.random() - 0.5) * 30;
-    heading = (heading + headingChange + 360) % 360;
-    
-    // Move based on heading and speed
-    const distance = speed / 3600 * 10; // Distance in degrees (approximation)
-    lat += Math.cos(heading * Math.PI / 180) * distance * 0.0001;
-    lng += Math.sin(heading * Math.PI / 180) * distance * 0.0001;
-    
-    positions.push({
-      id: `pos-${i}`,
-      latitude: lat,
-      longitude: lng,
-      timestamp: new Date(baseTime.getTime() - i * 60000),
-      speed: Math.round(speed * 10) / 10,
-      heading: Math.round(heading),
-      altitude: 15 + Math.random() * 5,
-      accuracy: 3 + Math.random() * 2,
-      battery: Math.max(20, 85 - i * 0.5 + Math.random() * 5),
-    });
-  }
-  
-  return positions;
-};
-
 const mockDevice: Device = {
   id: 'device-001',
-  name: 'Drill Carrier Alpha',
-  type: 'vehicle',
+  name: 'My Device',
+  type: 'smartphone',
   lastPosition: null,
   isOnline: true,
   lastSeen: new Date(),
 };
 
-const mockGeofences: Geofence[] = [
+const createGeofenceAroundPosition = (lat: number, lng: number): Geofence[] => [
   {
     id: 'geofence-001',
-    name: 'Work Site Perimeter',
-    center: { lat: 40.7128, lng: -74.006 },
+    name: 'Current Area Perimeter',
+    center: { lat, lng },
     radius: 500,
     isActive: true,
     alertOnEnter: false,
@@ -65,79 +27,74 @@ export const useTracking = () => {
     currentPosition: null,
     trackHistory: [],
     device: mockDevice,
-    geofences: mockGeofences,
+    geofences: [],
     alerts: [],
     isPlaying: false,
     playbackIndex: -1,
     playbackSpeed: 1,
   });
 
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [isLocating, setIsLocating] = useState(true);
   const playbackRef = useRef<NodeJS.Timeout | null>(null);
-  const liveUpdateRef = useRef<NodeJS.Timeout | null>(null);
+  const watchIdRef = useRef<number | null>(null);
+  const initialPositionSet = useRef(false);
 
-  // Initialize with mock data
+  // Use browser Geolocation API for real-time location
   useEffect(() => {
-    const track = generateMockTrack();
-    const currentPos = track[track.length - 1];
-    
-    setState(prev => ({
-      ...prev,
-      trackHistory: track,
-      currentPosition: currentPos,
-      device: {
-        ...prev.device!,
-        lastPosition: currentPos,
-        lastSeen: currentPos.timestamp,
-      },
-    }));
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported by your browser');
+      setIsLocating(false);
+      return;
+    }
 
-    // Simulate live updates
-    liveUpdateRef.current = setInterval(() => {
+    const handlePosition = (position: GeolocationPosition) => {
+      setIsLocating(false);
+      setLocationError(null);
+
+      const newPosition: GPSPosition = {
+        id: `pos-${Date.now()}`,
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        timestamp: new Date(position.timestamp),
+        speed: position.coords.speed ? position.coords.speed * 3.6 : 0, // Convert m/s to km/h
+        heading: position.coords.heading || 0,
+        altitude: position.coords.altitude || 0,
+        accuracy: position.coords.accuracy,
+        battery: 100, // Battery API is deprecated in most browsers
+      };
+
       setState(prev => {
-        if (prev.isPlaying) return prev; // Don't update during playback
-        
-        const lastPos = prev.currentPosition;
-        if (!lastPos) return prev;
-        
-        const speedVariation = Math.random() * 8 - 4;
-        const speed = Math.max(5, lastPos.speed + speedVariation);
-        const headingChange = (Math.random() - 0.5) * 20;
-        const heading = (lastPos.heading + headingChange + 360) % 360;
-        
-        const distance = speed / 3600 * 2;
-        const newLat = lastPos.latitude + Math.cos(heading * Math.PI / 180) * distance * 0.0001;
-        const newLng = lastPos.longitude + Math.sin(heading * Math.PI / 180) * distance * 0.0001;
-        
-        const newPosition: GPSPosition = {
-          id: `pos-${Date.now()}`,
-          latitude: newLat,
-          longitude: newLng,
-          timestamp: new Date(),
-          speed: Math.round(speed * 10) / 10,
-          heading: Math.round(heading),
-          altitude: lastPos.altitude,
-          accuracy: 3 + Math.random() * 2,
-          battery: Math.max(20, (lastPos.battery || 80) - 0.01),
-        };
+        // Don't update during playback
+        if (prev.isPlaying) return prev;
 
-        const newHistory = [...prev.trackHistory.slice(-59), newPosition];
+        // Set initial geofence around first position
+        let geofences = prev.geofences;
+        if (!initialPositionSet.current) {
+          initialPositionSet.current = true;
+          geofences = createGeofenceAroundPosition(newPosition.latitude, newPosition.longitude);
+        }
+
+        const newHistory = [...prev.trackHistory.slice(-119), newPosition];
         
         // Check geofence violations
         const newAlerts = [...prev.alerts];
-        prev.geofences.forEach(fence => {
-          if (!fence.isActive) return;
+        const lastPos = prev.currentPosition;
+        
+        geofences.forEach(fence => {
+          if (!fence.isActive || !lastPos) return;
           
-          const distance = getDistance(
+          const currentDistance = getDistance(
             fence.center.lat, fence.center.lng,
             newPosition.latitude, newPosition.longitude
           );
           
-          const wasInside = lastPos ? getDistance(
+          const wasInside = getDistance(
             fence.center.lat, fence.center.lng,
             lastPos.latitude, lastPos.longitude
-          ) <= fence.radius : true;
+          ) <= fence.radius;
           
-          const isInside = distance <= fence.radius;
+          const isInside = currentDistance <= fence.radius;
           
           if (wasInside && !isInside && fence.alertOnExit) {
             newAlerts.unshift({
@@ -168,18 +125,50 @@ export const useTracking = () => {
           ...prev,
           currentPosition: newPosition,
           trackHistory: newHistory,
+          geofences,
           alerts: newAlerts.slice(0, 50),
           device: {
             ...prev.device!,
             lastPosition: newPosition,
-            lastSeen: newPosition.timestamp,
+            lastSeen: new Date(),
+            isOnline: true,
           },
         };
       });
-    }, 2000);
+    };
+
+    const handleError = (error: GeolocationPositionError) => {
+      setIsLocating(false);
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          setLocationError('Location permission denied. Please enable location access.');
+          break;
+        case error.POSITION_UNAVAILABLE:
+          setLocationError('Location information is unavailable.');
+          break;
+        case error.TIMEOUT:
+          setLocationError('Location request timed out.');
+          break;
+        default:
+          setLocationError('An unknown error occurred.');
+      }
+    };
+
+    // Watch position for real-time updates
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      handlePosition,
+      handleError,
+      {
+        enableHighAccuracy: true, // Uses best available positioning (GPS, GLONASS, NavIC, etc.)
+        timeout: 10000,
+        maximumAge: 1000,
+      }
+    );
 
     return () => {
-      if (liveUpdateRef.current) clearInterval(liveUpdateRef.current);
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
     };
   }, []);
 
@@ -267,6 +256,8 @@ export const useTracking = () => {
 
   return {
     ...state,
+    locationError,
+    isLocating,
     startPlayback,
     stopPlayback,
     setPlaybackIndex,

@@ -4,7 +4,7 @@ import TrackingMap from '@/components/tracking/TrackingMap';
 import StatusPanel from '@/components/tracking/StatusPanel';
 import PlaybackControls from '@/components/tracking/PlaybackControls';
 import AlertsPanel from '@/components/tracking/AlertsPanel';
-import { Radio, Maximize2, Minimize2 } from 'lucide-react';
+import { Radio, Maximize2, Minimize2, MapPin, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Index = () => {
@@ -19,6 +19,8 @@ const Index = () => {
     isPlaying,
     playbackIndex,
     playbackSpeed,
+    locationError,
+    isLocating,
     startPlayback,
     stopPlayback,
     setPlaybackIndex,
@@ -37,16 +39,28 @@ const Index = () => {
             </div>
             <div>
               <h1 className="text-lg font-semibold text-foreground">GPS Tracker</h1>
-              <p className="text-xs text-muted-foreground">Real-time Fleet Monitoring</p>
+              <p className="text-xs text-muted-foreground">Real-time Location (Browser GPS/NavIC)</p>
             </div>
           </div>
           
           <div className="flex items-center gap-2">
-            {/* Live indicator */}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 border border-success/30">
-              <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
-              <span className="text-xs font-medium text-success">LIVE</span>
-            </div>
+            {/* Location status indicator */}
+            {isLocating ? (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-warning/10 border border-warning/30">
+                <Loader2 className="w-3 h-3 text-warning animate-spin" />
+                <span className="text-xs font-medium text-warning">LOCATING</span>
+              </div>
+            ) : locationError ? (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-destructive/10 border border-destructive/30">
+                <MapPin className="w-3 h-3 text-destructive" />
+                <span className="text-xs font-medium text-destructive">NO GPS</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 border border-success/30">
+                <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                <span className="text-xs font-medium text-success">LIVE</span>
+              </div>
+            )}
             
             <Button
               variant="ghost"
