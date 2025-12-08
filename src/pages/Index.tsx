@@ -65,45 +65,43 @@ const Index = () => {
       </header>
 
       {/* Main content */}
-      <main className="pt-16 h-screen flex">
+      <main className="pt-16 h-[calc(100vh-4rem)] flex">
         {/* Map area */}
-        <div className={`flex-1 relative transition-all duration-300 ${isFullscreen ? '' : 'md:mr-80'}`}>
-          <TrackingMap
-            currentPosition={currentPosition}
-            trackHistory={trackHistory}
-            geofences={geofences}
-            playbackIndex={playbackIndex}
-          />
-          
-          {/* Playback controls overlay */}
-          <div className="absolute bottom-4 left-4 right-4 md:right-auto md:w-96">
-            <PlaybackControls
-              positions={trackHistory}
-              currentIndex={playbackIndex}
-              isPlaying={isPlaying}
-              playbackSpeed={playbackSpeed}
-              onPlay={startPlayback}
-              onStop={stopPlayback}
-              onSeek={setPlaybackIndex}
-              onSpeedChange={setPlaybackSpeed}
+        <div className={`flex-1 flex flex-col relative transition-all duration-300 ${isFullscreen ? '' : 'md:mr-80'}`}>
+          {/* Map container - takes remaining space above playback */}
+          <div className="flex-1 relative">
+            <TrackingMap
+              currentPosition={currentPosition}
+              trackHistory={trackHistory}
+              geofences={geofences}
+              playbackIndex={playbackIndex}
             />
+          </div>
+          
+          {/* Playback controls - fixed at bottom */}
+          <div className="p-4 bg-background/80 backdrop-blur-sm border-t border-border/50">
+            <div className="max-w-xl">
+              <PlaybackControls
+                positions={trackHistory}
+                currentIndex={playbackIndex}
+                isPlaying={isPlaying}
+                playbackSpeed={playbackSpeed}
+                onPlay={startPlayback}
+                onStop={stopPlayback}
+                onSeek={setPlaybackIndex}
+                onSpeedChange={setPlaybackSpeed}
+              />
+            </div>
           </div>
         </div>
 
         {/* Sidebar */}
-        <aside className={`fixed right-0 top-16 bottom-0 w-80 p-4 space-y-4 overflow-y-auto transition-transform duration-300 ${
+        <aside className={`fixed right-0 top-16 bottom-0 w-80 p-4 space-y-4 overflow-y-auto transition-transform duration-300 border-l border-border/50 bg-background/50 backdrop-blur-sm ${
           isFullscreen ? 'translate-x-full' : 'translate-x-0'
         } hidden md:block`}>
           <StatusPanel position={currentPosition} device={device} />
           <AlertsPanel alerts={alerts} onDismiss={dismissAlert} />
         </aside>
-
-        {/* Mobile bottom sheet for status */}
-        <div className="fixed bottom-0 left-0 right-0 md:hidden">
-          <div className="p-4 pb-safe">
-            {/* Mobile playback controls are handled in the map overlay */}
-          </div>
-        </div>
       </main>
     </div>
   );
