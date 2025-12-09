@@ -5,7 +5,10 @@ import {
   Signal, 
   Clock,
   MapPin,
-  Compass
+  Compass,
+  ArrowDown,
+  Layers,
+  Wifi
 } from 'lucide-react';
 import { GPSPosition, Device } from '@/types/tracking';
 import { formatDistanceToNow } from 'date-fns';
@@ -13,9 +16,10 @@ import { formatDistanceToNow } from 'date-fns';
 interface StatusPanelProps {
   position: GPSPosition | null;
   device: Device | null;
+  isUnderground?: boolean;
 }
 
-const StatusPanel = ({ position, device }: StatusPanelProps) => {
+const StatusPanel = ({ position, device, isUnderground }: StatusPanelProps) => {
   const getBatteryColor = (level: number | undefined) => {
     if (!level) return 'text-muted-foreground';
     if (level > 50) return 'text-success';
@@ -26,6 +30,23 @@ const StatusPanel = ({ position, device }: StatusPanelProps) => {
   const getBatteryIcon = (level: number | undefined) => {
     if (!level) return 0;
     return Math.min(100, Math.max(0, level));
+  };
+
+  const getSignalColor = (strength: number | undefined) => {
+    if (!strength) return 'text-muted-foreground';
+    if (strength > 70) return 'text-success';
+    if (strength > 40) return 'text-warning';
+    return 'text-destructive';
+  };
+
+  const getStatusColor = (status: Device['status']) => {
+    switch (status) {
+      case 'operational': return 'text-success';
+      case 'maintenance': return 'text-warning';
+      case 'breakdown': return 'text-orange-500';
+      case 'emergency': return 'text-destructive';
+      default: return 'text-muted-foreground';
+    }
   };
 
   const formatCoordinate = (value: number, type: 'lat' | 'lng') => {
@@ -48,12 +69,45 @@ const StatusPanel = ({ position, device }: StatusPanelProps) => {
         <div className="flex items-center gap-3">
           <div className={`status-indicator ${device?.isOnline ? 'status-online' : 'status-offline'}`} />
           <div>
-            <h3 className="font-semibold text-foreground">{device?.name || 'Unknown Device'}</h3>
-            <p className="text-xs text-muted-foreground capitalize">{device?.type || 'tracker'}</p>
+            <h3 className="font-semibold text-foreground">{device?.name || 'Unknown Vehicle'}</h3>
+            <p className="text-xs text-muted-foreground capitalize">
+              {device?.type?.replace('_', ' ') || 'mining vehicle'}
+            </p>
           </div>
         </div>
-        <Signal className="w-4 h-4 text-primary" />
+        <div className={`px-2 py-1 rounded text-xs font-bold uppercase ${getStatusColor(device?.status)}`}>
+          {device?.status || 'unknown'}
+        </div>
       </div>
+
+      {/* Zone & Depth Info */}
+      {isUnderground && (
+        <>
+          <div className="h-px bg-border/50" />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-warning/10 border border-warning/30 rounded-lg p-3">
+              <div className="flex items-center gap-2 text-warning mb-1">
+                <Layers className="w-3.5 h-3.5" />
+                <span className="text-xs uppercase tracking-wide">Zone</span>
+              </div>
+              <div className="font-mono text-sm font-semibold text-foreground truncate">
+                {position?.zone || 'Unknown'}
+              </div>
+            </div>
+
+            <div className="bg-warning/10 border border-warning/30 rounded-lg p-3">
+              <div className="flex items-center gap-2 text-warning mb-1">
+                <ArrowDown className="w-3.5 h-3.5" />
+                <span className="text-xs uppercase tracking-wide">Depth</span>
+              </div>
+              <div className="font-mono text-xl font-semibold text-foreground">
+                {position?.depth || 0}
+                <span className="text-xs text-muted-foreground ml-1">m</span>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Divider */}
       <div className="h-px bg-border/50" />
@@ -86,6 +140,27 @@ const StatusPanel = ({ position, device }: StatusPanelProps) => {
           </div>
         </div>
 
+        {/* Signal Strength */}
+        <div className="bg-secondary/50 rounded-lg p-3">
+          <div className="flex items-center gap-2 text-muted-foreground mb-1">
+            <Wifi className={`w-3.5 h-3.5 ${getSignalColor(position?.signalStrength)}`} />
+            <span className="text-xs uppercase tracking-wide">Signal</span>
+          </div>
+          <div className={`font-mono text-xl font-semibold ${getSignalColor(position?.signalStrength)}`}>
+            {position?.signalStrength?.toFixed(0) || '--'}
+            <span className="text-xs ml-0.5">%</span>
+          </div>
+          <div className="mt-2 h-1 bg-muted rounded-full overflow-hidden">
+            <div 
+              className={`h-full rounded-full transition-all duration-500 ${
+                (position?.signalStrength || 0) > 70 ? 'bg-success' :
+                (position?.signalStrength || 0) > 40 ? 'bg-warning' : 'bg-destructive'
+              }`}
+              style={{ width: `${position?.signalStrength || 0}%` }}
+            />
+          </div>
+        </div>
+
         {/* Battery */}
         <div className="bg-secondary/50 rounded-lg p-3">
           <div className="flex items-center gap-2 text-muted-foreground mb-1">
@@ -96,7 +171,6 @@ const StatusPanel = ({ position, device }: StatusPanelProps) => {
             {position?.battery?.toFixed(0) || '--'}
             <span className="text-xs ml-0.5">%</span>
           </div>
-          {/* Battery bar */}
           <div className="mt-2 h-1 bg-muted rounded-full overflow-hidden">
             <div 
               className={`h-full rounded-full transition-all duration-500 ${
@@ -107,19 +181,19 @@ const StatusPanel = ({ position, device }: StatusPanelProps) => {
             />
           </div>
         </div>
+      </div>
 
-        {/* Last Seen */}
-        <div className="bg-secondary/50 rounded-lg p-3">
-          <div className="flex items-center gap-2 text-muted-foreground mb-1">
-            <Clock className="w-3.5 h-3.5" />
-            <span className="text-xs uppercase tracking-wide">Last Seen</span>
-          </div>
-          <div className="font-mono text-sm font-medium text-foreground">
-            {device?.lastSeen 
-              ? formatDistanceToNow(device.lastSeen, { addSuffix: true })
-              : '--'
-            }
-          </div>
+      {/* Last Seen */}
+      <div className="bg-secondary/50 rounded-lg p-3">
+        <div className="flex items-center gap-2 text-muted-foreground mb-1">
+          <Clock className="w-3.5 h-3.5" />
+          <span className="text-xs uppercase tracking-wide">Last Update</span>
+        </div>
+        <div className="font-mono text-sm font-medium text-foreground">
+          {device?.lastSeen 
+            ? formatDistanceToNow(device.lastSeen, { addSuffix: true })
+            : '--'
+          }
         </div>
       </div>
 
@@ -145,12 +219,6 @@ const StatusPanel = ({ position, device }: StatusPanelProps) => {
               {position ? formatCoordinate(position.longitude, 'lng') : '--'}
             </span>
           </div>
-          {position?.altitude && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">ALT</span>
-              <span className="text-foreground">{position.altitude.toFixed(1)} m</span>
-            </div>
-          )}
           {position?.accuracy && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">ACC</span>
