@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { useTracking } from '@/hooks/useTracking';
 import TrackingMap from '@/components/tracking/TrackingMap';
+import Mine3DView from '@/components/tracking/Mine3DView';
 import StatusPanel from '@/components/tracking/StatusPanel';
 import PlaybackControls from '@/components/tracking/PlaybackControls';
 import AlertsPanel from '@/components/tracking/AlertsPanel';
-import { HardHat, Maximize2, Minimize2, AlertTriangle, Loader2, Wifi, WifiOff, Wrench } from 'lucide-react';
+import { HardHat, Maximize2, Minimize2, AlertTriangle, Loader2, Wifi, WifiOff, Wrench, Map, Box } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
 const Index = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
   
   const {
     currentPosition,
@@ -82,6 +83,28 @@ const Index = () => {
               </div>
             )}
             
+            {/* View toggle */}
+            <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/50 border border-border">
+              <Button
+                variant={viewMode === '2d' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('2d')}
+                className="gap-1 h-7 px-2"
+              >
+                <Map className="w-3 h-3" />
+                2D
+              </Button>
+              <Button
+                variant={viewMode === '3d' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('3d')}
+                className="gap-1 h-7 px-2"
+              >
+                <Box className="w-3 h-3" />
+                3D
+              </Button>
+            </div>
+
             <Button
               variant="ghost"
               size="icon"
@@ -124,16 +147,25 @@ const Index = () => {
       <main className={`${isEmergencyActive ? 'pt-28' : 'pt-16'} h-[calc(100vh-4rem)] flex`}>
         {/* Map area */}
         <div className={`flex-1 flex flex-col relative transition-all duration-300 ${isFullscreen ? '' : 'md:mr-80'}`}>
-          {/* Map container */}
+          {/* Map/3D container */}
           <div className="flex-1 relative">
-            <TrackingMap
-              currentPosition={currentPosition}
-              trackHistory={trackHistory}
-              geofences={geofences}
-              playbackIndex={playbackIndex}
-              mineZones={mineZones}
-              isUnderground={isUnderground}
-            />
+            {viewMode === '2d' ? (
+              <TrackingMap
+                currentPosition={currentPosition}
+                trackHistory={trackHistory}
+                geofences={geofences}
+                playbackIndex={playbackIndex}
+                mineZones={mineZones}
+                isUnderground={isUnderground}
+              />
+            ) : (
+              <Mine3DView
+                currentPosition={currentPosition}
+                trackHistory={trackHistory}
+                mineZones={mineZones}
+                isUnderground={isUnderground}
+              />
+            )}
             
           </div>
           
