@@ -7,8 +7,10 @@ import {
   MapPin,
   Compass,
   ArrowDown,
+  ArrowUp,
   Layers,
-  Wifi
+  Wifi,
+  Mountain
 } from 'lucide-react';
 import { GPSPosition, Device } from '@/types/tracking';
 import { formatDistanceToNow } from 'date-fns';
@@ -223,6 +225,12 @@ const StatusPanel = ({ position, device, isUnderground }: StatusPanelProps) => {
             <div className="flex justify-between">
               <span className="text-muted-foreground">ACC</span>
               <span className="text-foreground">±{position.accuracy.toFixed(1)} m</span>
+            </div>
+          )}
+          {position?.altitude !== undefined && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">ALT</span>
+              <span className="text-foreground">{position.altitude.toFixed(1)} m</span>
             </div>
           )}
         </div>
