@@ -135,44 +135,45 @@ const Index = () => {
               isUnderground={isUnderground}
             />
             
-            {/* Emergency Buttons Overlay */}
-            <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
-              <Button
-                variant="destructive"
-                size="lg"
-                onClick={triggerEmergency}
-                disabled={device?.status === 'emergency'}
-                className="shadow-lg font-bold gap-2"
-              >
-                <AlertTriangle className="w-5 h-5" />
-                EMERGENCY
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={reportBreakdown}
-                disabled={device?.status === 'breakdown'}
-                className="shadow-lg font-bold gap-2 border-warning text-warning hover:bg-warning/10"
-              >
-                <Wrench className="w-5 h-5" />
-                BREAKDOWN
-              </Button>
-            </div>
           </div>
           
-          {/* Playback controls */}
+          {/* Playback controls with Emergency Buttons */}
           <div className="p-4 bg-background/80 backdrop-blur-sm border-t border-border/50">
-            <div className="max-w-xl">
-              <PlaybackControls
-                positions={trackHistory}
-                currentIndex={playbackIndex}
-                isPlaying={isPlaying}
-                playbackSpeed={playbackSpeed}
-                onPlay={startPlayback}
-                onStop={stopPlayback}
-                onSeek={setPlaybackIndex}
-                onSpeedChange={setPlaybackSpeed}
-              />
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex-1 max-w-xl min-w-0">
+                <PlaybackControls
+                  positions={trackHistory}
+                  currentIndex={playbackIndex}
+                  isPlaying={isPlaying}
+                  playbackSpeed={playbackSpeed}
+                  onPlay={startPlayback}
+                  onStop={stopPlayback}
+                  onSeek={setPlaybackIndex}
+                  onSpeedChange={setPlaybackSpeed}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="destructive"
+                  size="default"
+                  onClick={triggerEmergency}
+                  disabled={device?.status === 'emergency'}
+                  className="shadow-lg font-bold gap-2"
+                >
+                  <AlertTriangle className="w-4 h-4" />
+                  EMERGENCY
+                </Button>
+                <Button
+                  variant="outline"
+                  size="default"
+                  onClick={reportBreakdown}
+                  disabled={device?.status === 'breakdown'}
+                  className="shadow-lg font-bold gap-2 border-warning text-warning hover:bg-warning/10"
+                >
+                  <Wrench className="w-4 h-4" />
+                  BREAKDOWN
+                </Button>
+              </div>
             </div>
           </div>
         </div>
