@@ -14,7 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      vehicle_locations: {
+        Row: {
+          accuracy: number | null
+          altitude: number | null
+          created_at: string
+          depth: number | null
+          device_id: string
+          heading: number | null
+          id: string
+          latitude: number
+          longitude: number
+          signal_strength: number | null
+          speed: number | null
+          status: string | null
+          zone: string | null
+        }
+        Insert: {
+          accuracy?: number | null
+          altitude?: number | null
+          created_at?: string
+          depth?: number | null
+          device_id?: string
+          heading?: number | null
+          id?: string
+          latitude: number
+          longitude: number
+          signal_strength?: number | null
+          speed?: number | null
+          status?: string | null
+          zone?: string | null
+        }
+        Update: {
+          accuracy?: number | null
+          altitude?: number | null
+          created_at?: string
+          depth?: number | null
+          device_id?: string
+          heading?: number | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          signal_strength?: number | null
+          speed?: number | null
+          status?: string | null
+          zone?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { useTracking } from '@/hooks/useTracking';
+import { useRemoteTracking } from '@/hooks/useRemoteTracking';
 import TrackingMap from '@/components/tracking/TrackingMap';
 import Mine3DView from '@/components/tracking/Mine3DView';
 import StatusPanel from '@/components/tracking/StatusPanel';
-import PlaybackControls from '@/components/tracking/PlaybackControls';
 import AlertsPanel from '@/components/tracking/AlertsPanel';
-import { HardHat, Maximize2, Minimize2, AlertTriangle, Loader2, Wifi, WifiOff, Wrench, Map, Box } from 'lucide-react';
+import { HardHat, Maximize2, Minimize2, AlertTriangle, Loader2, Wifi, WifiOff, Wrench, Map, Box, Radio, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
 const Index = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
+  const [trackingMode, setTrackingMode] = useState<'tracker' | 'viewer'>('viewer');
   
   const {
     currentPosition,
@@ -17,22 +18,16 @@ const Index = () => {
     device,
     geofences,
     alerts,
-    isPlaying,
-    playbackIndex,
-    playbackSpeed,
     locationError,
     isLocating,
     isUnderground,
     mineZones,
-    startPlayback,
-    stopPlayback,
-    setPlaybackIndex,
-    setPlaybackSpeed,
+    isConnected,
     dismissAlert,
     triggerEmergency,
     reportBreakdown,
     clearEmergency,
-  } = useTracking();
+  } = useRemoteTracking(trackingMode, 'rc-car-001');
 
   const isEmergencyActive = device?.status === 'emergency' || device?.status === 'breakdown';
 
@@ -83,6 +78,28 @@ const Index = () => {
               </div>
             )}
             
+            {/* Tracking Mode toggle */}
+            <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/50 border border-border">
+              <Button
+                variant={trackingMode === 'tracker' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setTrackingMode('tracker')}
+                className="gap-1 h-7 px-2"
+              >
+                <Radio className="w-3 h-3" />
+                Tracker
+              </Button>
+              <Button
+                variant={trackingMode === 'viewer' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setTrackingMode('viewer')}
+                className="gap-1 h-7 px-2"
+              >
+                <Eye className="w-3 h-3" />
+                Viewer
+              </Button>
+            </div>
+
             {/* View toggle */}
             <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/50 border border-border">
               <Button
@@ -154,7 +171,7 @@ const Index = () => {
                 currentPosition={currentPosition}
                 trackHistory={trackHistory}
                 geofences={geofences}
-                playbackIndex={playbackIndex}
+                playbackIndex={-1}
                 mineZones={mineZones}
                 isUnderground={isUnderground}
               />
@@ -166,23 +183,25 @@ const Index = () => {
                 isUnderground={isUnderground}
               />
             )}
-            
           </div>
           
-          {/* Playback controls with Emergency Buttons */}
+          {/* Mode info and controls */}
           <div className="p-4 bg-background/80 backdrop-blur-sm border-t border-border/50">
-            <div className="flex items-center gap-4 flex-wrap">
-              <div className="flex-1 max-w-xl min-w-0">
-                <PlaybackControls
-                  positions={trackHistory}
-                  currentIndex={playbackIndex}
-                  isPlaying={isPlaying}
-                  playbackSpeed={playbackSpeed}
-                  onPlay={startPlayback}
-                  onStop={stopPlayback}
-                  onSeek={setPlaybackIndex}
-                  onSpeedChange={setPlaybackSpeed}
-                />
+            <div className="flex items-center gap-4 flex-wrap justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
+                  isConnected ? 'bg-success/10 border border-success/30' : 'bg-muted/50 border border-border'
+                }`}>
+                  <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-success animate-pulse' : 'bg-muted-foreground'}`} />
+                  <span className={`text-sm font-medium ${isConnected ? 'text-success' : 'text-muted-foreground'}`}>
+                    {trackingMode === 'tracker' ? 'SENDING GPS' : 'RECEIVING'} {isConnected ? '• LIVE' : '• OFFLINE'}
+                  </span>
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {trackingMode === 'tracker' 
+                    ? 'Place this device in your RC car to track its location' 
+                    : 'Viewing RC car location from database'}
+                </span>
               </div>
               <div className="flex gap-2">
                 <Button
