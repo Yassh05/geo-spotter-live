@@ -1,16 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRemoteTracking } from '@/hooks/useRemoteTracking';
 import TrackingMap from '@/components/tracking/TrackingMap';
 import Mine3DView from '@/components/tracking/Mine3DView';
 import StatusPanel from '@/components/tracking/StatusPanel';
 import AlertsPanel from '@/components/tracking/AlertsPanel';
-import { HardHat, Maximize2, Minimize2, AlertTriangle, Loader2, Wifi, WifiOff, Wrench, Map, Box, Radio, Eye } from 'lucide-react';
+import { HardHat, Maximize2, Minimize2, AlertTriangle, Loader2, Wifi, WifiOff, Wrench, Map, Box, Radio, Eye, QrCode, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { QRCodeSVG } from 'qrcode.react';
 
 const Index = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
-  const [trackingMode, setTrackingMode] = useState<'tracker' | 'viewer'>('viewer');
+  const [showQR, setShowQR] = useState(false);
+  
+  // Check URL params for mode on load
+  const [trackingMode, setTrackingMode] = useState<'tracker' | 'viewer'>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('mode') === 'tracker' ? 'tracker' : 'viewer';
+  });
+
+  const trackerUrl = `${window.location.origin}${window.location.pathname}?mode=tracker`;
   
   const {
     currentPosition,
@@ -122,6 +131,16 @@ const Index = () => {
               </Button>
             </div>
 
+            {/* QR Code button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowQR(true)}
+              title="Show QR Code for Tracker Mode"
+            >
+              <QrCode className="w-4 h-4" />
+            </Button>
+
             <Button
               variant="ghost"
               size="icon"
@@ -136,6 +155,27 @@ const Index = () => {
             </Button>
           </div>
         </div>
+
+        {/* QR Code Modal */}
+        {showQR && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm" onClick={() => setShowQR(false)}>
+            <div className="glass-panel p-6 rounded-2xl max-w-sm mx-4 text-center" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-foreground">Scan to Track</h2>
+                <Button variant="ghost" size="icon" onClick={() => setShowQR(false)}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="bg-white p-4 rounded-xl inline-block mb-4">
+                <QRCodeSVG value={trackerUrl} size={200} level="H" />
+              </div>
+              <p className="text-sm text-muted-foreground mb-2">
+                Scan this QR code on your phone to open the app in <span className="text-primary font-medium">Tracker Mode</span>
+              </p>
+              <p className="text-xs text-muted-foreground/70 break-all">{trackerUrl}</p>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Emergency Banner */}
