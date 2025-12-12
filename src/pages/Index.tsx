@@ -5,6 +5,7 @@ import TrackingMap from '@/components/tracking/TrackingMap';
 import Mine3DView from '@/components/tracking/Mine3DView';
 import StatusPanel from '@/components/tracking/StatusPanel';
 import AlertsPanel from '@/components/tracking/AlertsPanel';
+import PlaybackControls from '@/components/tracking/PlaybackControls';
 import { HardHat, Maximize2, Minimize2, AlertTriangle, Loader2, Wifi, WifiOff, Wrench, Map, Box, Radio, Eye, QrCode, X, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { QRCodeSVG } from 'qrcode.react';
@@ -13,6 +14,9 @@ const Index = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
   const [showQR, setShowQR] = useState(false);
+  const [playbackIndex, setPlaybackIndex] = useState(-1);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const { signOut } = useAuth();
   
   // Check URL params for mode on load
@@ -41,6 +45,38 @@ const Index = () => {
   } = useRemoteTracking(trackingMode, 'rc-car-001');
 
   const isEmergencyActive = device?.status === 'emergency' || device?.status === 'breakdown';
+
+  // Playback logic
+  useEffect(() => {
+    if (!isPlaying || trackHistory.length < 2) return;
+    
+    const interval = setInterval(() => {
+      setPlaybackIndex(prev => {
+        const next = prev - 1;
+        if (next < 0) {
+          setIsPlaying(false);
+          return -1;
+        }
+        return next;
+      });
+    }, 1000 / playbackSpeed);
+
+    return () => clearInterval(interval);
+  }, [isPlaying, playbackSpeed, trackHistory.length]);
+
+  const handlePlaybackPlay = () => {
+    if (trackHistory.length < 2) return;
+    setPlaybackIndex(trackHistory.length - 1);
+    setIsPlaying(true);
+  };
+
+  const handlePlaybackStop = () => {
+    setIsPlaying(false);
+  };
+
+  const handlePlaybackSeek = (index: number) => {
+    setPlaybackIndex(index);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -228,7 +264,7 @@ const Index = () => {
                 currentPosition={currentPosition}
                 trackHistory={trackHistory}
                 geofences={geofences}
-                playbackIndex={-1}
+                playbackIndex={playbackIndex}
                 mineZones={mineZones}
                 isUnderground={isUnderground}
               />
@@ -240,6 +276,20 @@ const Index = () => {
                 isUnderground={isUnderground}
               />
             )}
+          </div>
+
+          {/* Playback Controls - Always visible */}
+          <div className="absolute bottom-24 left-4 right-4 md:right-auto md:w-96 z-10">
+            <PlaybackControls
+              positions={trackHistory}
+              currentIndex={playbackIndex}
+              isPlaying={isPlaying}
+              playbackSpeed={playbackSpeed}
+              onPlay={handlePlaybackPlay}
+              onStop={handlePlaybackStop}
+              onSeek={handlePlaybackSeek}
+              onSpeedChange={setPlaybackSpeed}
+            />
           </div>
           
           {/* Mode info and controls */}
