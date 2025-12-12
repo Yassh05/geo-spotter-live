@@ -28,6 +28,7 @@ export type Database = {
           signal_strength: number | null
           speed: number | null
           status: string | null
+          user_id: string | null
           zone: string | null
         }
         Insert: {
@@ -43,6 +44,7 @@ export type Database = {
           signal_strength?: number | null
           speed?: number | null
           status?: string | null
+          user_id?: string | null
           zone?: string | null
         }
         Update: {
@@ -58,6 +60,7 @@ export type Database = {
           signal_strength?: number | null
           speed?: number | null
           status?: string | null
+          user_id?: string | null
           zone?: string | null
         }
         Relationships: []

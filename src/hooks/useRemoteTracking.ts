@@ -54,10 +54,11 @@ export const useRemoteTracking = (mode: TrackingMode, deviceId: string = 'defaul
   const initialPositionSet = useRef(false);
 
   // Send location to database (tracker mode)
-  const sendLocationToDb = useCallback(async (position: GPSPosition) => {
+  const sendLocationToDb = useCallback(async (position: GPSPosition, userId: string) => {
     try {
       const { error } = await supabase.from('vehicle_locations').insert({
         device_id: deviceId,
+        user_id: userId,
         latitude: position.latitude,
         longitude: position.longitude,
         altitude: position.altitude,
@@ -89,6 +90,18 @@ export const useRemoteTracking = (mode: TrackingMode, deviceId: string = 'defaul
       setIsLocating(false);
       return;
     }
+
+    // Get current user for tracker mode
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      return user;
+    };
+
+    let currentUserId: string | null = null;
+    
+    getCurrentUser().then(user => {
+      currentUserId = user?.id || null;
+    });
 
     const handlePosition = (position: GeolocationPosition) => {
       setIsLocating(false);
@@ -125,8 +138,10 @@ export const useRemoteTracking = (mode: TrackingMode, deviceId: string = 'defaul
         isOnline: true,
       }));
 
-      // Send to database
-      sendLocationToDb(newPosition);
+      // Send to database with user_id
+      if (currentUserId) {
+        sendLocationToDb(newPosition, currentUserId);
+      }
     };
 
     const handleError = (error: GeolocationPositionError) => {
