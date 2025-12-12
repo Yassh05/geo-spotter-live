@@ -278,8 +278,8 @@ const Index = () => {
             )}
           </div>
 
-          {/* Playback Controls - Always visible */}
-          <div className="absolute bottom-24 left-4 right-4 md:right-auto md:w-96 z-10">
+          {/* Playback Controls - Below map */}
+          <div className="p-4 border-t border-border/50 bg-background/80 backdrop-blur-sm">
             <PlaybackControls
               positions={trackHistory}
               currentIndex={playbackIndex}
