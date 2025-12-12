@@ -166,28 +166,34 @@ const Index = () => {
             </Button>
           </div>
         </div>
-
-        {/* QR Code Modal */}
-        {showQR && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm" onClick={() => setShowQR(false)}>
-            <div className="glass-panel p-6 rounded-2xl max-w-sm mx-4 text-center" onClick={e => e.stopPropagation()}>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-foreground">Scan to Track</h2>
-                <Button variant="ghost" size="icon" onClick={() => setShowQR(false)}>
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-              <div className="bg-white p-4 rounded-xl inline-block mb-4">
-                <QRCodeSVG value={trackerUrl} size={200} level="H" />
-              </div>
-              <p className="text-sm text-muted-foreground mb-2">
-                Scan this QR code on your phone to open the app in <span className="text-primary font-medium">Tracker Mode</span>
-              </p>
-              <p className="text-xs text-muted-foreground/70 break-all">{trackerUrl}</p>
-            </div>
-          </div>
-        )}
       </header>
+
+      {/* QR Code Modal - moved outside header for proper z-index */}
+      {showQR && (
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm" 
+          onClick={() => setShowQR(false)}
+        >
+          <div 
+            className="bg-card border border-border p-6 rounded-2xl max-w-sm mx-4 text-center shadow-2xl" 
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-foreground">Scan to Track</h2>
+              <Button variant="ghost" size="icon" onClick={() => setShowQR(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="bg-white p-4 rounded-xl inline-block mb-4">
+              <QRCodeSVG value={trackerUrl} size={200} level="H" />
+            </div>
+            <p className="text-sm text-muted-foreground mb-2">
+              Scan this QR code on your phone to open the app in <span className="text-primary font-medium">Tracker Mode</span>
+            </p>
+            <p className="text-xs text-muted-foreground/70 break-all">{trackerUrl}</p>
+          </div>
+        </div>
+      )}
 
       {/* Emergency Banner */}
       {isEmergencyActive && (
