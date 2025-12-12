@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useRemoteTracking } from '@/hooks/useRemoteTracking';
+import { useAuth } from '@/hooks/useAuth';
 import TrackingMap from '@/components/tracking/TrackingMap';
 import Mine3DView from '@/components/tracking/Mine3DView';
 import StatusPanel from '@/components/tracking/StatusPanel';
 import AlertsPanel from '@/components/tracking/AlertsPanel';
-import { HardHat, Maximize2, Minimize2, AlertTriangle, Loader2, Wifi, WifiOff, Wrench, Map, Box, Radio, Eye, QrCode, X } from 'lucide-react';
+import { HardHat, Maximize2, Minimize2, AlertTriangle, Loader2, Wifi, WifiOff, Wrench, Map, Box, Radio, Eye, QrCode, X, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -12,6 +13,7 @@ const Index = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
   const [showQR, setShowQR] = useState(false);
+  const { signOut } = useAuth();
   
   // Check URL params for mode on load
   const [trackingMode, setTrackingMode] = useState<'tracker' | 'viewer'>(() => {
@@ -152,6 +154,15 @@ const Index = () => {
               ) : (
                 <Maximize2 className="w-4 h-4" />
               )}
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => signOut()}
+              title="Sign Out"
+            >
+              <LogOut className="w-4 h-4" />
             </Button>
           </div>
         </div>
