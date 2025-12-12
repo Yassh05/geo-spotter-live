@@ -32,25 +32,29 @@ const PlaybackControls = ({
   onSeek,
   onSpeedChange,
 }: PlaybackControlsProps) => {
+  const hasHistory = positions.length > 1;
   const currentPosition = positions[currentIndex >= 0 ? currentIndex : positions.length - 1];
   const startTime = positions[0]?.timestamp;
   const endTime = positions[positions.length - 1]?.timestamp;
 
   const handleSliderChange = (value: number[]) => {
-    onSeek(value[0]);
+    if (hasHistory) onSeek(value[0]);
   };
 
   const handleSkipBack = () => {
+    if (!hasHistory) return;
     const newIndex = Math.max(0, currentIndex - 10);
     onSeek(newIndex);
   };
 
   const handleSkipForward = () => {
+    if (!hasHistory) return;
     const newIndex = Math.min(positions.length - 1, currentIndex + 10);
     onSeek(newIndex);
   };
 
   const handleReset = () => {
+    if (!hasHistory) return;
     onStop();
     onSeek(positions.length - 1);
   };
@@ -70,15 +74,28 @@ const PlaybackControls = ({
         </div>
       </div>
 
+      {/* Empty state message */}
+      {!hasHistory && (
+        <div className="text-center py-4 px-2 rounded-lg bg-muted/30 border border-border/50">
+          <p className="text-sm text-muted-foreground">
+            No track history yet
+          </p>
+          <p className="text-xs text-muted-foreground/70 mt-1">
+            Historical data will appear here once tracking begins. Start the tracker to record vehicle movements.
+          </p>
+        </div>
+      )}
+
       {/* Timeline */}
       <div className="space-y-2">
         <Slider
-          value={[currentIndex >= 0 ? currentIndex : positions.length - 1]}
-          max={positions.length - 1}
+          value={[currentIndex >= 0 ? currentIndex : Math.max(0, positions.length - 1)]}
+          max={Math.max(0, positions.length - 1)}
           min={0}
           step={1}
           onValueChange={handleSliderChange}
-          className="cursor-pointer"
+          disabled={!hasHistory}
+          className={hasHistory ? "cursor-pointer" : "opacity-50 cursor-not-allowed"}
         />
         
         <div className="flex justify-between text-xs font-mono text-muted-foreground">
@@ -101,7 +118,7 @@ const PlaybackControls = ({
             size="icon"
             className="h-8 w-8"
             onClick={handleSkipBack}
-            disabled={!isPlaying && currentIndex <= 0}
+            disabled={!hasHistory || (!isPlaying && currentIndex <= 0)}
           >
             <SkipBack className="w-4 h-4" />
           </Button>
@@ -111,6 +128,7 @@ const PlaybackControls = ({
             size="icon"
             className="h-10 w-10 rounded-full glow-primary"
             onClick={isPlaying ? onStop : onPlay}
+            disabled={!hasHistory}
           >
             {isPlaying ? (
               <Pause className="w-5 h-5" />
@@ -124,7 +142,7 @@ const PlaybackControls = ({
             size="icon"
             className="h-8 w-8"
             onClick={handleSkipForward}
-            disabled={!isPlaying && currentIndex >= positions.length - 1}
+            disabled={!hasHistory || (!isPlaying && currentIndex >= positions.length - 1)}
           >
             <SkipForward className="w-4 h-4" />
           </Button>
@@ -134,6 +152,7 @@ const PlaybackControls = ({
             size="icon"
             className="h-8 w-8"
             onClick={handleReset}
+            disabled={!hasHistory}
           >
             <RotateCcw className="w-4 h-4" />
           </Button>
